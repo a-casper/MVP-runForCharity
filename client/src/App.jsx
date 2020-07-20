@@ -6,6 +6,7 @@ import Header from './components/Header.jsx';
 import LoginSignup from './components/Login.jsx';
 import Individual from './components/Individual';
 import Team from './components/Team.jsx';
+import Runs from './components/Runs.jsx';
 import testData from './dummy.js';
 
 class App extends React.Component {
@@ -16,6 +17,10 @@ class App extends React.Component {
       currentView: "runner",
       team: testData.team,
       newUser: false,
+      userRuns: [],
+      userMiles: 0,
+      userTime: '00:00:00',
+      userPace: 0.0,
       formData: {
         username: '',
         password: '',
@@ -32,6 +37,9 @@ class App extends React.Component {
 
   handleTabChange(e) {
     console.log(e.target.value)
+    this.setState({
+      currentView: e.target.value
+    })
   }
 
   toggleNewUser() {
@@ -56,11 +64,14 @@ class App extends React.Component {
           username: this.state.formData.username,
           password: this.state.formData.password
         })
-        .then(user => {
-            this.setState({
-              user: testData.runner,
-              username: user.data
-            })
+        .then(userInfo => {
+          console.log("retrived info:", userInfo)
+          this.generateUser(userInfo.data[0], userInfo.data[1], userInfo.data[3]);
+            // this.setState({
+            //   user: userInfo.data[0],
+            //   userRuns: userInfo.data[1],
+            //   team: userInfo.data[3] || null
+            // })
         })
         .catch(err => {
           alert("Username and Password do not match");
@@ -73,8 +84,12 @@ class App extends React.Component {
           name: this.state.formData.name,
           birthDate: this.state.formData.birthDate
         })
-        .then(user => {
-          console.log('signup server responded with:', user);
+        .then(response => {
+          let user =  response.data[0];
+          this.setState({
+            user
+          })
+          //console.log('signup server responded with:', user);
         })
         .catch(err => {
           console.error('error with sign-up', err);
@@ -92,6 +107,36 @@ class App extends React.Component {
 
   }
 
+  generateUser(user, runs, team) {
+    //format the time and calulate total miles based of runs
+    let totalMiles = 0;
+    let totalTime = 0;
+    runs.forEach(run => {
+      totalMiles += run.miles;
+      totalTime += run.time;
+
+      let hours = Math.floor(run.time / 60 / 60);
+      let minutes = Math.floor(run.time / 60) - (hours * 60);
+      let seconds = run.time % 60;
+
+      run.formatted = hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+      run.pace = (run.miles / (run.time / 60 /60)).toFixed(2);
+    })
+
+    let hours = Math.floor(totalTime / 60 / 60);
+    let minutes = Math.floor(totalTime / 60) - (hours * 60);
+    let seconds = totalTime % 60;
+    let formatted = hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+
+    this.setState({
+      user,
+      userRuns: runs,
+      userMiles: totalMiles,
+      userTime: formatted,
+      userPace: (totalMiles / (totalTime / 60 / 60)).toFixed(2)
+    })
+  }
+
   render() {
     return(
       <div className="container">
@@ -104,8 +149,25 @@ class App extends React.Component {
         handleFormChange={this.handleFormChange}
         formData={this.state.formData}
         />
-        <Individual currentView={this.state.currentView} user={this.state.user}/>
-        <Team currentView={this.state.currentView} user={this.state.user} runners={this.state.team} />
+        <Individual
+        currentView={this.state.currentView}
+        user={this.state.user}
+        team={this.state.team}
+        runs={this.state.userRuns}
+        miles={this.state.userMiles}
+        time={this.state.userTime}
+        pace={this.state.userPace}
+        />
+        <Team
+        currentView={this.state.currentView}
+        user={this.state.user}
+        runners={this.state.team}
+        />
+        <Runs
+        currentView={this.state.currentView}
+        user={this.state.user}
+        runs={this.state.userRuns}
+        />
       </div>
     );
   }

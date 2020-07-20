@@ -19,11 +19,13 @@ app.post('/login', async (req, res) => {
   if(user === undefined) {
     res.status(404).send('Username does not exist');
   } else {
-    bcrypt.compare(req.body.password, user.password, (err, result) => {
+    bcrypt.compare(req.body.password, user.password, async (err, result) => {
       if(err) {
         console.log('error comparing in bcrypt', err);
       } else if (result) {
-        res.status(202).send(user.username);
+        //valid user, now I need to send back the user, team, and rundata
+        runnerInfo = await db.getRunner(user.id);
+        res.status(202).send(runnerInfo);
       } else {
         res.status(401).send('Incorrect Passord');
       }
@@ -38,8 +40,8 @@ app.post('/signup', (req, res) => {
       res.sendStatus(404);
     }
     try{
-      let result = await db.createUser(req.body.username, hash);
-      res.status(200).send(result);
+      let result = await db.createUser(req.body, hash);
+      res.status(200).send(result.rows);
     } catch(err) {
       console.log('Error creating User', err);
       res.sendStatus(500);

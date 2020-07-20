@@ -5,6 +5,10 @@ export default function Team({ currentView, user, runners }) {
 
   if (currentView !== "team") {
     return null;
+  } else if(user.teamId ===  null) {
+    return (
+    <button>Sign up for a Team to run for charity!</button>
+    );
   }
 
   return (

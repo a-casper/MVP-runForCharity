@@ -5,8 +5,7 @@ export default function Header({ handleTabChange }) {
     <header className="container-header">
       <h1 className="item-title">Run Across ...?</h1>
       <div className="item-login">
-        <button>login</button>
-        <button>signup</button>
+        <button>Log New Run</button>
       </div>
       <table className="item-nav">
         <tbody>

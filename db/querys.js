@@ -29,10 +29,27 @@ pool.getUser = async (userName) => {
   }
 };
 
-pool.createUser = async (userName, hash) => {
+pool.getRunner = async (userId) => {
   try {
-    let result = await pool.query(`INSERT INTO users("username", "password")  VALUES ($1, $2)`, [userName, hash])
-    return result;
+    let runner = await pool.query(`SELECT * FROM runners WHERE "userId"=$1`, [userId]);
+    let runs = await pool.query(`SELECT miles, time, "runDate" from runs WHERE "runnerId"=${runner.rows[0].id} ORDER BY "runDate" DESC`);
+    let team = null;
+    if(runner.rows[0].teamId !== null) {
+      team = await pool.query(`SELECT name, charity, goal from teams WHERE "id=${runner.rows[0].teamId}"`)
+    }
+    return [runner.rows[0], runs.rows, team];
+  } catch(err) {
+    console.log('Error retreiving runner from DB', err);
+  }
+};
+
+pool.createUser = async (signUpInfo, hash) => {
+  try {
+    let result = await pool.query(`INSERT INTO users("username", "password")  VALUES ($1, $2)`, [signUpInfo.username, hash])
+    let user = await pool.query(`SELECT * FROM users WHERE "username"=$1`, [signUpInfo.username]);
+    let runner = await pool.query(`INSERT INTO runners("userId", "name", "birthDate") VALUES ($1, $2, $3)`, [user.rows[0].id, signUpInfo.name, signUpInfo.birthDate]);
+    runner = await pool.query(`SELECT * FROM runners WHERE "userId"=$1`, [user.rows[0].id])
+    return runner;
   } catch(err) {
     console.log('Error adding user to DB', err)
   }
